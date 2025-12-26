@@ -315,23 +315,27 @@ elif st.session_state.current_mode == "Resume Review":
         # Score display with color coding
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            score_color = "🟢" if result['ats_score'] >= 70 else "🟡" if result['ats_score'] >= 50 else "🔴"
-            st.metric("ATS Score", f"{result['ats_score']}/100")
-            st.caption(f"{score_color} {'Excellent' if result['ats_score'] >= 70 else 'Good' if result['ats_score'] >= 50 else 'Needs Work'}")
+            ats_score = int(result.get('ats_score', 0)) if isinstance(result, dict) else 0
+            score_color = "🟢" if ats_score >= 70 else "🟡" if ats_score >= 50 else "🔴"
+            st.metric("ATS Score", f"{ats_score}/100")
+            st.caption(f"{score_color} {'Excellent' if ats_score >= 70 else 'Good' if ats_score >= 50 else 'Needs Work'}")
         
         with col2:
-            total_found = sum(len(words) for words in result['found_keywords'].values())
+            found_keywords = result.get('found_keywords', {}) if isinstance(result, dict) else {}
+            total_found = sum(len(words) for words in found_keywords.values()) if isinstance(found_keywords, dict) else 0
             st.metric("Keywords Found", total_found)
             st.caption("Across all categories")
         
         with col3:
-            st.metric("Action Verbs", result['action_verb_count'])
+            action_verb_count = result.get('action_verb_count', 0) if isinstance(result, dict) else 0
+            st.metric("Action Verbs", action_verb_count)
             st.caption("Power words detected")
         
         with col4:
-            format_status = "✅ Good" if len(result['text']) > 500 else "⚠️ Too Short"
+            result_text = result.get('text', '') if isinstance(result, dict) else ''
+            format_status = "✅ Good" if len(result_text) > 500 else "⚠️ Too Short"
             st.metric("Format Check", format_status)
-            st.caption(f"{len(result['text'])} characters")
+            st.caption(f"{len(result_text)} characters")
         
         st.markdown("---")
         
@@ -340,32 +344,37 @@ elif st.session_state.current_mode == "Resume Review":
         
         with col_left:
             with st.expander("✅ Found Keywords (Your Strengths)", expanded=True):
-                for cat, words in result['found_keywords'].items():
-                    if words:
-                        st.markdown(f"**{cat}:** {', '.join(words)}")
+                found_kw = result.get('found_keywords', {}) if isinstance(result, dict) else {}
+                if isinstance(found_kw, dict):
+                    for cat, words in found_kw.items():
+                        if words:
+                            st.markdown(f"**{cat}:** {', '.join(words)}")
         
         with col_right:
             with st.expander("❌ Missing Keywords (Add These!)", expanded=True):
-                for cat, words in result['missing_keywords'].items():
-                    if words and len(words) > 0:
-                        st.markdown(f"**{cat}:** {', '.join(words[:5])}")
+                missing_kw = result.get('missing_keywords', {}) if isinstance(result, dict) else {}
+                if isinstance(missing_kw, dict):
+                    for cat, words in missing_kw.items():
+                        if words and len(words) > 0:
+                            st.markdown(f"**{cat}:** {', '.join(words[:5])}")
         
         # Actionable recommendations
         st.markdown("### 📋 Actionable Recommendations")
         recommendations = []
         
-        if result['ats_score'] < 70:
+        if ats_score < 70:
             recommendations.append("🎯 **Priority:** Add more technical keywords from missing categories")
         
-        if result['action_verb_count'] < 5:
+        if action_verb_count < 5:
             recommendations.append("💪 **Add Action Verbs:** Use words like 'developed', 'implemented', 'optimized', 'designed', 'built', 'led', 'managed'")
         
-        if len(result['text']) < 500:
+        if len(result_text) < 500:
             recommendations.append("📝 **Expand Content:** Add more details about projects, achievements, and technical skills")
         
-        missing_cats = [cat for cat, words in result['missing_keywords'].items() if len(words) > len(result['found_keywords'].get(cat, []))]
-        if missing_cats:
-            recommendations.append(f"🔍 **Focus Areas:** Strengthen {', '.join(missing_cats[:3])} sections")
+        if isinstance(missing_kw, dict) and isinstance(found_kw, dict):
+            missing_cats = [cat for cat, words in missing_kw.items() if len(words) > len(found_kw.get(cat, []))]
+            if missing_cats:
+                recommendations.append(f"🔍 **Focus Areas:** Strengthen {', '.join(missing_cats[:3])} sections")
         
         if not recommendations:
             recommendations.append("✨ **Great Job!** Your resume is well-optimized for ATS systems")
