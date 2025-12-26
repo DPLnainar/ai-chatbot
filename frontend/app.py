@@ -82,7 +82,7 @@ st.markdown("""
 # --- 2. API SETUP ---
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
-genai.configure(api_key=api_key)
+genai.configure(api_key=api_key)  # type: ignore
 
 # --- 3. COMPANY-SPECIFIC INSTRUCTIONS ---
 COMPANY_INSTRUCTIONS = {
@@ -247,14 +247,18 @@ with st.sidebar:
                 
                 with st.expander("📊 Detailed Report"):
                     st.write("**Found Keywords:**")
-                    for cat, words in result['found_keywords'].items():
-                        if words:
-                            st.write(f"- {cat}: {', '.join(words)}")
+                    found_kw = result.get('found_keywords', {}) if isinstance(result, dict) else {}
+                    if isinstance(found_kw, dict):
+                        for cat, words in found_kw.items():
+                            if words:
+                                st.write(f"- {cat}: {', '.join(words)}")
                     
                     st.write("\n**Missing Keywords (Add these!):**")
-                    for cat, words in result['missing_keywords'].items():
-                        if words:
-                            st.write(f"- {cat}: {', '.join(words[:3])}")
+                    missing_kw = result.get('missing_keywords', {}) if isinstance(result, dict) else {}
+                    if isinstance(missing_kw, dict):
+                        for cat, words in missing_kw.items():
+                            if words:
+                                st.write(f"- {cat}: {', '.join(words[:3])}")
                     
                     st.write(f"\n**Action Verbs:** {result['action_verb_count']}")
                     st.info(result['recommendations'])
@@ -294,7 +298,7 @@ st.title(f"Hello, Future Engineer 🚀")
 # Mode-specific content
 if st.session_state.current_mode == "Career Path":
     st.markdown("**I am your Elite Mentor. I give roadmaps, resources, and brutal feedback.**")
-    model = genai.GenerativeModel(
+    model = genai.GenerativeModel(  # type: ignore
         model_name="gemini-flash-latest",
         system_instruction="""You are a Career Planning Mentor for students preparing for placements.
         - Provide clear career roadmaps for different tech roles
@@ -365,7 +369,7 @@ elif st.session_state.current_mode == "Resume Review":
         if ats_score < 70:
             recommendations.append("🎯 **Priority:** Add more technical keywords from missing categories")
         
-        if action_verb_count < 5:
+        if int(action_verb_count) < 5:
             recommendations.append("💪 **Add Action Verbs:** Use words like 'developed', 'implemented', 'optimized', 'designed', 'built', 'led', 'managed'")
         
         if len(result_text) < 500:
@@ -386,7 +390,7 @@ elif st.session_state.current_mode == "Resume Review":
     else:
         st.info("👆 Upload your resume in the sidebar to see detailed ATS analysis and get personalized feedback!")
     
-    model = genai.GenerativeModel(
+    model = genai.GenerativeModel(  # type: ignore
         model_name="gemini-flash-latest",
         system_instruction="""You are a Resume Review Expert specializing in tech placements.
         - Provide detailed resume feedback based on the ATS score if available
@@ -398,7 +402,7 @@ elif st.session_state.current_mode == "Resume Review":
 
 elif st.session_state.current_mode == "Tech Skills":
     st.markdown("**I am your Elite Mentor. I give roadmaps, resources, and brutal feedback.**")
-    model = genai.GenerativeModel(
+    model = genai.GenerativeModel(  # type: ignore
         model_name="gemini-flash-latest",
         system_instruction="""You are a Technical Skills Mentor for placement preparation.
         - Explain technical concepts clearly (DSA, System Design, Web Dev, etc.)
@@ -425,7 +429,7 @@ else:  # Mock Interview mode
     5. Be professional, direct, and constructive
     6. Cover relevant topics: coding, system design, behavioral, or domain-specific questions"""
     
-    model = genai.GenerativeModel(
+    model = genai.GenerativeModel(  # type: ignore
         model_name="gemini-flash-latest",
         system_instruction=interview_instruction
     )
